@@ -1,14 +1,28 @@
 #! /usr/bin/bash
 
-
+# Holds the selected bookmark
 selectedBookmark=""
-bookmarkPath="$HOME/bookmarks"
+
+# holds the path to the bookmark file
+bookmarkPath="$HOME/.config/fzf-bookmarks/bookmarks"
 
 # check if fzf is installed
 if   ! type "fzf" > /dev/null; then
 		echo "fzf is not installed! Please install it before using this program"
 		exit 1
 fi
+
+# check if the bookmark file exists
+# if it does not, it will be created in the .config folder
+function checkBookmarkDirectory(){
+	if [ ! -d "$HOME/.config/fzf-bookmarks" ]
+	then
+			cd "$HOME/.config"
+			mkdir "fzf-bookmarks"
+			cd "fzf-bookmarks"
+			touch "bookmarks"
+	fi
+}
 
 # change directories to the selected bookmark
 function switchToBookmark(){
@@ -29,4 +43,4 @@ function addBookmark(){
 	fi
 }
 
-addBookmark "Hello"
+checkBookmarkDirectory
