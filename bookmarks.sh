@@ -27,14 +27,14 @@ function checkBookmarkDirectory(){
 
 # change directories to the selected bookmark
 function switchToBookmark(){
-	local bmarkLineNum=$(wc -l $bookmarkPath) 
-	echo $bookmarkPath
-	if [ "$bmarkLineNum" == 0 ]
+	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
+	if [ $bmarkLineNum == 0 ]
 	then
 		printf "You do not have any bookmarks set\n"
 		exit 0
 	else
 	 	selectedBookmark=$(awk '{print $1}' $bookmarkPath | fzf)
+	 	echo $selectedBookmark
 	 	if [ ! -z selectedBookmark ]
 		then 
 	 		cd $(awk -v var="$selectedBookmark" '$1 == var {print $2}' $bookmarkPath)
@@ -48,6 +48,14 @@ function switchToBookmark(){
 # Add a new bookmark
 # If a path is not provided then the current directory is used
 function addBookmark(){
+	# check if a bookmark with the name provided already exists
+	local boolUnique=$(awk -v var="$1" '$1 == var {print 1}' $bookmarkPath)
+	if [ "$boolUnique" == "1" ]
+	then
+		printf "A bookmark with that name already exists! Please enter a different one.\n"
+		exit 1
+	fi
+
 	if [ -z "$2" ] 
 	then
 		printf "$1\t$PWD\n" >> $bookmarkPath
@@ -88,6 +96,7 @@ function removeBookmark(){
 	fi
 }
 
+checkBookmarkDirectory
 # Parse script arguments
 if [ -z $1 ]
 then 
