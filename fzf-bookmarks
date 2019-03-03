@@ -31,6 +31,10 @@ function checkBookmarkDirectory(){
 }
 
 # Change directories to the selected bookmark
+# This function uses a flag to designate if the bookmarks should be filtered or not
+# 0: Show all bookmarks(unfiltered)
+# 1: Show only directory bookmarks
+# 2: Show only files
 function switchToBookmark(){
 	# Variable holds the number of lines in a file
 	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
@@ -40,8 +44,27 @@ function switchToBookmark(){
 		exit 0
 	fi
 
+	# Show all bookmarks without filtering
+	if [ $1 -eq 0 ]
+	then
+			selectedBookmark=$(awk '{print $1, $2}' $bookmarkPath | fzf)
+			# Grab the type of selected bookmark(either DIR or FILE)
+			local type=$(echo $selectedBookmark | awk '{print $2}')
+			if [ $type == "DIR" ]
+			then
+	 			cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
+				# make the change of directory affect the parent shell 
+				# and not just the subshell
+				exec bash
+			else
+					echo "This must be a file and I need to refactory my code!"
+			fi
+
+
+
+	#TODO: Refactor this mess!!!!!
 	# Case of a only directories
-	if [ $1 -eq 1 ]
+	elif [ $1 -eq 1 ]
 	then
 	 	selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
 	 	echo $selectedBookmark
@@ -62,6 +85,7 @@ function switchToBookmark(){
 			# Retrieve the corresponding program used to launch
 			local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
 			# Launch the program in a detached state
+			# Currently does not work if $EDITOR is a terminal one
 			if [ ! -z $program ]
 			then
 				exec "$program" "$fileLocation" "&"
@@ -100,7 +124,7 @@ function addBookmark(){
 	then
 		# retrieve the file extension
 		# props to: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
-		local extension=$( echo "$2" | awk -F . '{print $NF}')
+		local extension=$( echo "$*" | awk -F . '{print $NF}')
 		printf "$1\tFILE\t$2\t$extension\n" >> $bookmarkPath
 		printf "Bookmark added successfully!\n"
 	else
@@ -174,7 +198,7 @@ checkBookmarkDirectory
 if [ -z $1 ]
 then 
 	# Display all bookmarks
-	switchToBookmark
+	switchToBookmark 0
 elif [ $1 == "-d" ]
 then
 	# Display directories only
