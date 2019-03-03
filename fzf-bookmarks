@@ -26,11 +26,12 @@ function checkBookmarkDirectory(){
 			mkdir "fzf-bookmarks"
 			cd "fzf-bookmarks"
 			touch "bookmarks"
+			touch "config"
 	fi
 }
 
 # Change directories to the selected bookmark
-function switchToDirBookmark(){
+function switchToBookmark(){
 	# Variable holds the number of lines in a file
 	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
 	if [ $bmarkLineNum == 0 ]
@@ -55,16 +56,24 @@ function switchToDirBookmark(){
 	elif [ $1 -eq 2 ]
 	then
 			selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
-			echo $selectedBookmark
 			# Retrieve the file type
 			local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
 			local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
-			echo $fileType
 			# Retrieve the corresponding program used to launch
 			local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
-			echo $program
 			# Launch the program in a detached state
-			eval "$program" "$fileLocation" "&"
+			if [ ! -z $program ]
+			then
+				exec "$program" "$fileLocation" "&"
+			else
+				printf "This filetype and its associated program is not defined in the config file!\n"
+			fi
+
+	# Case of displaying all bookmarks
+	else 
+		selectedBookmark=$(awk ' {print $1 $2}' $bookmarkPath | fzf)
+		# Get the actual bookmark name
+		selectedBookmark=$($selectedBookmark | awk '{print $1}')
 	fi
 }
 
@@ -86,12 +95,14 @@ function addBookmark(){
 	elif [ -d $2 ]
 	then
 		printf "$1\tDIR\t$2\n" >> $bookmarkPath
+		printf "Bookmark added successfully!\n"
 	elif [ -e $2 ]
 	then
 		# retrieve the file extension
 		# props to: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
 		local extension=$( echo "$2" | awk -F . '{print $NF}')
 		printf "$1\tFILE\t$2\t$extension\n" >> $bookmarkPath
+		printf "Bookmark added successfully!\n"
 	else
 		printf "The path provided is neither a folder or a file! It most likely does not exist!\n"
 	fi
@@ -108,6 +119,23 @@ function selectAlias(){
 	local selectedAlias=$(awk '/^alias / {print $0}' "$HOME/.bashrc" | fzf)
 }
 
+function selectManPage(){
+	# hold the name of selected page 
+	local selectedPage=""
+
+	# Print all manpage sections
+	if [ -z $1 ]
+	then
+		# variable to hold the selected manpage
+		selectedPage=$(man -k . | awk '{print $1 $2}' | fzf)
+		exec man $selectedPage
+
+	# Exec manpages for selected section
+	else
+		selectedPage=$(apropos -s "$1" . | awk '{print $1}'| fzf)
+		exec man $selectedPage
+	fi
+}
 # Remove the specified bookmark from the bookmarks file
 function removeBookmark(){
 	if [ ! -z "$2" ]
@@ -145,13 +173,16 @@ checkBookmarkDirectory
 # Parse script arguments
 if [ -z $1 ]
 then 
+	# Display all bookmarks
 	switchToBookmark
 elif [ $1 == "-d" ]
 then
-	switchToDirBookmark 1
+	# Display directories only
+	switchToBookmark 1
 elif [ $1 == "-f" ]
 then
-	switchToDirBookmark 2
+	# Display Files only
+	switchToBookmark 2
 elif [ $1 == "-a" ]
 then
 	addBookmark "$2" "$3"
@@ -164,4 +195,7 @@ then
 elif [ $1 == "-al" ]
 then
 	selectAlias	
+elif [ $1 == "-m" ]
+then
+	selectManPage $2
 fi
