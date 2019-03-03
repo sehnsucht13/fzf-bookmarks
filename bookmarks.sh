@@ -27,17 +27,22 @@ function checkBookmarkDirectory(){
 
 # change directories to the selected bookmark
 function switchToBookmark(){
-	if [ $(wc -l $bookmarkPath) == 0 ]
+	local bmarkLineNum=$(wc -l $bookmarkPath) 
+	echo $bookmarkPath
+	if [ "$bmarkLineNum" == 0 ]
 	then
 		printf "You do not have any bookmarks set\n"
 		exit 0
 	else
 	 	selectedBookmark=$(awk '{print $1}' $bookmarkPath | fzf)
-	 	cd $(awk -v var="$selectedBookmark" '$1 == var {print $2}' $bookmarkPath)
-		 # make the change of directory affect the parent shell 
-		 # and not just the subshell
-		 exec bash
-fi
+	 	if [ ! -z selectedBookmark ]
+		then 
+	 		cd $(awk -v var="$selectedBookmark" '$1 == var {print $2}' $bookmarkPath)
+			# make the change of directory affect the parent shell 
+			# and not just the subshell
+			exec bash
+		 fi
+	fi
 }
 
 # Add a new bookmark
@@ -72,15 +77,25 @@ function removeBookmark(){
 			exit 0
 	# case of providing a name manually
 	else 
-			selectedBookmark=$(awk -v var="$1" '$1 == var {print NR}' $bookmarkPath)
-		if [ ! -z $selectedBookmark ]
+		local selectedBookmarkIndex=$(awk -v var="$1" '$1 == var {print NR}' $bookmarkPath)
+		if [ ! -z $selectedBookmarkIndex ]
 		then
 				# delete the line number 
-				sed -i "$selectedBookmark"d "$bookmarkPath"
+				sed -i "$selectedBookmarkIndex"d "$bookmarkPath"
 		else
 				printf "Bookmark not found!\n"
 		fi
 	fi
 }
 
-removeBookmark "22"
+# Parse script arguments
+if [ -z $1 ]
+then 
+	switchToBookmark
+elif [ $1 == "-a" ]
+then
+	addBookmark "$2" "$3"
+elif [ $1 == "-r" ]
+then
+	removeBookmark "$2" "$3"	
+fi
