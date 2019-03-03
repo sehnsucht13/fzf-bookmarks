@@ -38,9 +38,9 @@ function switchToBookmark(){
 	else
 	 	selectedBookmark=$(awk '{print $1}' $bookmarkPath | fzf)
 	 	echo $selectedBookmark
-	 	if [ ! -z selectedBookmark ]
+	 	if [ ! -z $selectedBookmark ]
 		then 
-	 		cd $(awk -v var="$selectedBookmark" '$1 == var {print $2}' $bookmarkPath)
+	 		cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
 			# make the change of directory affect the parent shell 
 			# and not just the subshell
 			exec bash
@@ -61,9 +61,16 @@ function addBookmark(){
 
 	if [ -z "$2" ] 
 	then
-		printf "$1\t$PWD\n" >> $bookmarkPath
+		printf "$1\tDIR\t$PWD\n" >> $bookmarkPath
+	elif [ -d $2 ]
+	then
+		echo "This is a dir"
+		printf "$1\tDIR\t$2\n" >> $bookmarkPath
 	else
-		printf "$1\t$2\n" >> $bookmarkPath
+		echo "This is a file"
+		# retrieve the file extension
+		local extension=$( echo "$2" | awk -F . '{print $NF}')
+		printf "$1\tFILE\t$2\t$extension\n" >> $bookmarkPath
 	fi
 }
 
@@ -71,6 +78,11 @@ function addBookmark(){
 function eraseAllBookmarks(){
 	rm $bookmarkPath
 	touch $bookmarkPath
+}
+
+# Display all aliases to the user and let them select one
+function selectAlias(){
+	local selectedAlias=$(awk '/^alias / {print $0}' "$HOME/.bashrc" | fzf)
 }
 
 # Remove the specified bookmark from the bookmarks file
@@ -120,4 +132,7 @@ then
 elif [ $1 == "-eraseall" ]
 then
 	eraseAllBookmarks
+elif [ $1 == "-al" ]
+then
+	selectAlias	
 fi
