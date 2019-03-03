@@ -8,6 +8,8 @@ selectedBookmark=""
 
 # holds the path to the bookmark file
 bookmarkPath="$HOME/.config/fzf-bookmarks/bookmarks"
+# Path to the program config used to launch files
+fileLauncherPath="$HOME/.config/fzf-bookmarks/config"
 
 # check if fzf is installed
 if   ! type "fzf" > /dev/null; then
@@ -27,16 +29,20 @@ function checkBookmarkDirectory(){
 	fi
 }
 
-
 # Change directories to the selected bookmark
-function switchToBookmark(){
+function switchToDirBookmark(){
+	# Variable holds the number of lines in a file
 	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
 	if [ $bmarkLineNum == 0 ]
 	then
 		printf "You do not have any bookmarks set\n"
 		exit 0
-	else
-	 	selectedBookmark=$(awk '{print $1}' $bookmarkPath | fzf)
+	fi
+
+	# Case of a only directories
+	if [ $1 -eq 1 ]
+	then
+	 	selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
 	 	echo $selectedBookmark
 	 	if [ ! -z $selectedBookmark ]
 		then 
@@ -45,6 +51,20 @@ function switchToBookmark(){
 			# and not just the subshell
 			exec bash
 		 fi
+	# Case of listing only files
+	elif [ $1 -eq 2 ]
+	then
+			selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
+			echo $selectedBookmark
+			# Retrieve the file type
+			local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
+			local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
+			echo $fileType
+			# Retrieve the corresponding program used to launch
+			local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
+			echo $program
+			# Launch the program in a detached state
+			eval "$program" "$fileLocation" "&"
 	fi
 }
 
@@ -62,15 +82,18 @@ function addBookmark(){
 	if [ -z "$2" ] 
 	then
 		printf "$1\tDIR\t$PWD\n" >> $bookmarkPath
+	# Case of a path being provided
 	elif [ -d $2 ]
 	then
-		echo "This is a dir"
 		printf "$1\tDIR\t$2\n" >> $bookmarkPath
-	else
-		echo "This is a file"
+	elif [ -e $2 ]
+	then
 		# retrieve the file extension
+		# props to: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
 		local extension=$( echo "$2" | awk -F . '{print $NF}')
 		printf "$1\tFILE\t$2\t$extension\n" >> $bookmarkPath
+	else
+		printf "The path provided is neither a folder or a file! It most likely does not exist!\n"
 	fi
 }
 
@@ -123,6 +146,12 @@ checkBookmarkDirectory
 if [ -z $1 ]
 then 
 	switchToBookmark
+elif [ $1 == "-d" ]
+then
+	switchToDirBookmark 1
+elif [ $1 == "-f" ]
+then
+	switchToDirBookmark 2
 elif [ $1 == "-a" ]
 then
 	addBookmark "$2" "$3"
