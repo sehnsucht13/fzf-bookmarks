@@ -1,5 +1,8 @@
 #! /usr/bin/bash
 
+# find file extension for a file
+#  echo "thisfile.txt"|awk -F . '{print $NF}'
+
 # Holds the selected bookmark
 selectedBookmark=""
 
@@ -25,7 +28,7 @@ function checkBookmarkDirectory(){
 }
 
 
-# change directories to the selected bookmark
+# Change directories to the selected bookmark
 function switchToBookmark(){
 	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
 	if [ $bmarkLineNum == 0 ]
@@ -64,6 +67,13 @@ function addBookmark(){
 	fi
 }
 
+# Erase the entire bookmark file and create a fresh one
+function eraseAllBookmarks(){
+	rm $bookmarkPath
+	touch $bookmarkPath
+}
+
+# Remove the specified bookmark from the bookmarks file
 function removeBookmark(){
 	if [ ! -z "$2" ]
 	then
@@ -107,4 +117,7 @@ then
 elif [ $1 == "-r" ]
 then
 	removeBookmark "$2" "$3"	
+elif [ $1 == "-eraseall" ]
+then
+	eraseAllBookmarks
 fi
