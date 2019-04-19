@@ -8,6 +8,7 @@ selectedBookmark=""
 
 # holds the path to the bookmark file
 bookmarkPath="$HOME/.config/fzf-bookmarks/bookmarks"
+
 # Path to the program config used to launch files
 fileLauncherPath="$HOME/.config/fzf-bookmarks/config"
 
@@ -31,17 +32,18 @@ function checkBookmarkDirectory(){
 }
 
 # Change directories to the selected bookmark
-# This function uses a flag to designate if the bookmarks should be filtered or not
+# This function uses a flag to decide if the bookmarks should be filtered or not.
+# The accepted flag values are:
 # 0: Show all bookmarks(unfiltered)
 # 1: Show only directory bookmarks
 # 2: Show only files
 function switchToBookmark(){
-	# Variable holds the number of lines in a file
+	# Check if there are any bookmarks.
 	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
 	if [ $bmarkLineNum == 0 ]
 	then
 		printf "You do not have any bookmarks set\n"
-		exit 0
+		exit 1
 	fi
 
 	# Show all bookmarks without filtering
@@ -112,21 +114,25 @@ function addBookmark(){
 		exit 1
 	fi
 
+	# If the second argument passed is empty
 	if [ -z "$2" ] 
 	then
 		printf "$1\tDIR\t$PWD\n" >> $bookmarkPath
-	# Case of a path being provided
+		printf "Bookmark added successfully!\n"
+	# Case of a path being provided 
 	elif [ -d $2 ]
 	then
 		printf "$1\tDIR\t$2\n" >> $bookmarkPath
 		printf "Bookmark added successfully!\n"
+	# Case of adding a file
 	elif [ -e $2 ]
 	then
 		# retrieve the file extension
-		# props to: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
+		# Source: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
 		local extension=$( echo "$*" | awk -F . '{print $NF}')
 		printf "$1\tFILE\t$2\t$extension\n" >> $bookmarkPath
 		printf "Bookmark added successfully!\n"
+	# Incomplete bookmark.
 	else
 		printf "The path provided is neither a folder or a file! It most likely does not exist!\n"
 	fi
@@ -199,27 +205,35 @@ if [ -z $1 ]
 then 
 	# Display all bookmarks
 	switchToBookmark 0
+
 elif [ $1 == "-d" ]
 then
 	# Display directories only
 	switchToBookmark 1
+
 elif [ $1 == "-f" ]
 then
 	# Display Files only
 	switchToBookmark 2
+
 elif [ $1 == "-a" ]
 then
 	addBookmark "$2" "$3"
+
 elif [ $1 == "-r" ]
 then
+
 	removeBookmark "$2" "$3"	
 elif [ $1 == "-eraseall" ]
 then
+
 	eraseAllBookmarks
 elif [ $1 == "-al" ]
 then
+
 	selectAlias	
 elif [ $1 == "-m" ]
 then
+
 	selectManPage $2
 fi
