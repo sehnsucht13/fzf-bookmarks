@@ -52,11 +52,12 @@ function switchToBookmark(){
 			selectedBookmark=$(awk '{print $1, $2}' $bookmarkPath | fzf)
 			# Grab the type of selected bookmark(either DIR or FILE)
 			local type=$(echo $selectedBookmark | awk '{print $2}')
+			selectedBookmark=$(echo $selectedBookmark | awk '{print $1}') 
 			if [ $type == "DIR" ]
 			then
 	 			cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
 				# make the change of directory affect the parent shell 
-				# and not just the subshell
+				# and not just the subshell spawned
 				exec bash
 			else
 					echo "This must be a file and I need to refactory my code!"
@@ -64,7 +65,6 @@ function switchToBookmark(){
 
 
 
-	#TODO: Refactor this mess!!!!!
 	# Case of a only directories
 	elif [ $1 -eq 1 ]
 	then
