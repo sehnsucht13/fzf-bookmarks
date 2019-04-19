@@ -56,11 +56,22 @@ function switchToBookmark(){
 			if [ $type == "DIR" ]
 			then
 	 			cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
-				# make the change of directory affect the parent shell 
-				# and not just the subshell spawned
-				exec bash
 			else
-					echo "This must be a file and I need to refactory my code!"
+				selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
+				# Retrieve the file type
+				local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
+				local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
+				# Retrieve the corresponding program used to launch
+				local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
+				# Launch the program in a detached state
+				# Currently does not work if $EDITOR is a terminal one
+				if [ ! -z $program ]
+				then
+					echo "$program" $fileLocation "&"
+					eval "$program" $fileLocation 
+				else
+					printf "This filetype and its associated program is not defined in the config file!\n"
+				fi
 			fi
 
 
@@ -77,9 +88,9 @@ function switchToBookmark(){
 			# and not just the subshell
 			exec bash
 		 fi
+
 	# Case of listing only files
-	elif [ $1 -eq 2 ]
-	then
+	else [ $1 -eq 2 ]
 			selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
 			# Retrieve the file type
 			local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
@@ -90,16 +101,11 @@ function switchToBookmark(){
 			# Currently does not work if $EDITOR is a terminal one
 			if [ ! -z $program ]
 			then
-				exec "$program" "$fileLocation" "&"
+				echo "$program" $fileLocation "&"
+				eval "$program" $fileLocation 
 			else
 				printf "This filetype and its associated program is not defined in the config file!\n"
 			fi
-
-	# Case of displaying all bookmarks
-	else 
-		selectedBookmark=$(awk ' {print $1 $2}' $bookmarkPath | fzf)
-		# Get the actual bookmark name
-		selectedBookmark=$($selectedBookmark | awk '{print $1}')
 	fi
 }
 
