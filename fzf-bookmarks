@@ -30,6 +30,7 @@ function checkBookmarkDirectory(){
 			touch "config"
 	fi
 }
+
 # Open a file with the selected program in the config file or $EDITOR otherwise
 open_file(){
 	selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
@@ -42,24 +43,19 @@ open_file(){
 	# Currently does not work if $EDITOR is a terminal one
 	if [ ! -z $program ]
 	then
-		echo $program
-		if [ $program = "$EDITOR" ]
+		# Retrieve the value of $EDITOR to see if it is a terminal based one
+		program=$(eval echo $program)
+		if [ $program = "vim" ] || [ $program = "vi" ] || [ $program = "nano" ] || [ $program = "ed" ] || [ $program = "emacs -nw" ] || [ $program = "emacsclient -nw" ]
 		then
-			echo "Got editor"
-		fi
-
-		if [ $program = "vim" ] || [ $program = "vi" ] || [ $program = "nano" ]
-		then
-			echo "Got a vim/vi/nano"
 			eval "$program" $fileLocation
 		else
-			eval "$program" $fileLocation 
+			# start editor in background to not block terminal
+			eval "$program" $fileLocation &
 		fi
 			
+	# Deal with the case of a filetype not existing
 	else
 		program=$(awk -v var="DEFAULT" '$1 == var {print $2}' $fileLauncherPath)
-		echo "Got a nonstandart"
-		echo $program
 		eval "$program" $fileLocation
 	fi
 }
