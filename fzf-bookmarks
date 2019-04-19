@@ -30,6 +30,49 @@ function checkBookmarkDirectory(){
 			touch "config"
 	fi
 }
+# Open a file with the selected program in the config file or $EDITOR otherwise
+open_file(){
+	selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
+	# Retrieve the file type
+	local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
+	local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
+	# Retrieve the corresponding program used to launch
+	local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
+	# Launch the program in a detached state
+	# Currently does not work if $EDITOR is a terminal one
+	if [ ! -z $program ]
+	then
+		echo $program
+		if [ $program = "$EDITOR" ]
+		then
+			echo "Got editor"
+		fi
+
+		if [ $program = "vim" ] || [ $program = "vi" ] || [ $program = "nano" ]
+		then
+			echo "Got a vim/vi/nano"
+			eval "$program" $fileLocation
+		else
+			eval "$program" $fileLocation 
+		fi
+			
+	else
+		program=$(awk -v var="DEFAULT" '$1 == var {print $2}' $fileLauncherPath)
+		echo "Got a nonstandart"
+		echo $program
+		eval "$program" $fileLocation
+	fi
+}
+
+# Open a directory
+open_dir(){
+	selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
+	echo $selectedBookmark
+	if [ ! -z $selectedBookmark ]
+	then 
+		cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
+		fi
+}
 
 # Change directories to the selected bookmark
 # This function uses a flag to decide if the bookmarks should be filtered or not.
@@ -55,57 +98,19 @@ function switchToBookmark(){
 			selectedBookmark=$(echo $selectedBookmark | awk '{print $1}') 
 			if [ $type == "DIR" ]
 			then
-	 			cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
+				open_dir
 			else
-				selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
-				# Retrieve the file type
-				local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
-				local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
-				# Retrieve the corresponding program used to launch
-				local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
-				# Launch the program in a detached state
-				# Currently does not work if $EDITOR is a terminal one
-				if [ ! -z $program ]
-				then
-					echo "$program" $fileLocation "&"
-					eval "$program" $fileLocation 
-				else
-					printf "This filetype and its associated program is not defined in the config file!\n"
-				fi
+				open_file
 			fi
-
-
 
 	# Case of a only directories
 	elif [ $1 -eq 1 ]
 	then
-	 	selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
-	 	echo $selectedBookmark
-	 	if [ ! -z $selectedBookmark ]
-		then 
-	 		cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
-			# make the change of directory affect the parent shell 
-			# and not just the subshell
-			exec bash
-		 fi
+		open_dir
 
 	# Case of listing only files
 	else [ $1 -eq 2 ]
-			selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
-			# Retrieve the file type
-			local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
-			local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
-			# Retrieve the corresponding program used to launch
-			local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
-			# Launch the program in a detached state
-			# Currently does not work if $EDITOR is a terminal one
-			if [ ! -z $program ]
-			then
-				echo "$program" $fileLocation "&"
-				eval "$program" $fileLocation 
-			else
-				printf "This filetype and its associated program is not defined in the config file!\n"
-			fi
+		 open_file
 	fi
 }
 
