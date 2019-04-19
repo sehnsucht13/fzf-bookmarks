@@ -129,16 +129,28 @@ function addBookmark(){
 	# Case of a path being provided 
 	elif [ -d $2 ]
 	then
-		printf "$1\tDIR\t$2\n" >> $bookmarkPath
-		printf "Bookmark added successfully!\n"
+		if [[ $2 = /* ]]
+		then
+			printf "$1\tDIR\t$2\n"  >> $bookmarkPath
+		else
+			printf "$1\tDIR\t%s\n" $(echo "$PWD""/"$2) >> $bookmarkPath
+		fi
 	# Case of adding a file
 	elif [ -e $2 ]
 	then
 		# retrieve the file extension
 		# Source: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
 		local extension=$( echo "$*" | awk -F . '{print $NF}')
-		printf "$1\tFILE\t$2\t$extension\n" >> $bookmarkPath
-		printf "Bookmark added successfully!\n"
+
+		# Check if the full filepath is provided. If not, we have to prepend the full path to be able to access
+		# the bookmark from anywhere
+		if [[ $2 = /* ]]
+		then
+			printf "$1\tFILE\t$2\t$extension\n"  >> $bookmarkPath
+		else
+			printf "$1\tFILE\t%s\t$extension\n" $(echo "$PWD""/"$2) >> $bookmarkPath
+		fi
+
 	# Incomplete bookmark.
 	else
 		printf "The path provided is neither a folder or a file! It most likely does not exist!\n"
