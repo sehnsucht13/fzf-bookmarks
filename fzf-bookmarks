@@ -47,43 +47,46 @@ function checkBookmarkDirectory(){
 
 # Open a file with the selected program in the config file or $EDITOR otherwise
 open_file(){
-	selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
-	# Retrieve the file type
-	local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
-	local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
-	# Retrieve the corresponding program used to launch
-	local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
-	# Launch the program in a detached state
-	# Currently does not work if $EDITOR is a terminal one
-	if [ ! -z $program ]
+	# Check if the bookmark is not empty. If it is, do nothing
+	if [ ! -z $selectedBookmark ]
 	then
-		# Retrieve the value of $EDITOR to see if it is a terminal based one
-		program=$(eval echo $program)
-
-		# Check for some common terminal editors
-		if [ $program = "vim" ] || [ $program = "vi" ] || [ $program = "nano" ] || [ $program = "ed" ] || [ $program = "emacs -nw" ] || [ $program = "emacsclient -nw" ]
+		# Retrieve the file type
+		local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
+		local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
+		# Retrieve the corresponding program used to launch
+		local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
+		# Launch the program in a detached state
+		# Currently does not work if $EDITOR is a terminal one
+		if [ ! -z $program ]
 		then
-			eval "$program" $fileLocation
+			# Retrieve the value of $EDITOR to see if it is a terminal based one
+			program=$(eval echo $program)
+
+			# Check for some common terminal editors
+			if [ $program = "vim" ] || [ $program = "vi" ] || \
+			[ $program = "nano" ] || [ $program = "ed" ] || \
+			[ $program = "emacs -nw" ] || [ $program = "emacsclient -nw" ]
+			then
+				eval "$program" $fileLocation
+			else
+				# start program/editor in background to not block terminal 
+				eval "$program" $fileLocation &
+			fi
+				
+		# Deal with the case of a filetype not existing
 		else
-			# start program/editor in background to not block terminal 
-			eval "$program" $fileLocation &
+			program=$(awk -v var="DEFAULT" '$1 == var {print $2}' $fileLauncherPath)
+			eval "$program" $fileLocation
 		fi
-			
-	# Deal with the case of a filetype not existing
-	else
-		program=$(awk -v var="DEFAULT" '$1 == var {print $2}' $fileLauncherPath)
-		eval "$program" $fileLocation
 	fi
 }
 
 # Open a directory
 open_dir(){
-	selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
-	echo $selectedBookmark
 	if [ ! -z $selectedBookmark ]
 	then 
 		cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
-		fi
+	fi
 }
 
 # Change directories to the selected bookmark
@@ -98,11 +101,10 @@ function switchToBookmark(){
 	if [ $bmarkLineNum == 0 ]
 	then
 		printf "You do not have any bookmarks set\n"
-		exit 1
-	fi
+		printf "You can add some by calling \"fzf-bookmarks -a NAME PATH\"\n"
 
 	# Show all bookmarks without filtering
-	if [ $1 -eq 0 ]
+	elif [ $1 -eq 0 ]
 	then
 			selectedBookmark=$(awk '{print $1, $2}' $bookmarkPath | fzf)
 			# Grab the type of selected bookmark(either DIR or FILE)
@@ -111,18 +113,21 @@ function switchToBookmark(){
 			if [ $type == "DIR" ]
 			then
 				open_dir
-			else
+			elif [ $type == "FILE" ]
+			then
 				open_file
 			fi
 
-	# Case of a only directories
+	# Case of selecting only directories
 	elif [ $1 -eq 1 ]
 	then
+		selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
 		open_dir
 
-	# Case of listing only files
+	# Case of selecting only files
 	else [ $1 -eq 2 ]
-		 open_file
+		selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
+		open_file
 	fi
 }
 
@@ -280,6 +285,7 @@ then
 	# Fuzzy search through man pages(Not working fully)
 	selectManPage $2
 	
+# Print usage
 elif [ $1 == "--usage" ] 
 then
 	printf "fzf-bookmarks is a small bookmark manager for the commandline with the ability to bookmark\n"
@@ -287,6 +293,8 @@ then
 	printf "with a dedicated program selected from the config file located in ~/.config/fzf-bookmarks/config\n"
 	printf "or in the case of a folder, navigate to it in the current terminal instance.\n"
 
+# Use -- infront of printf to make it ignore -d, -f, -a and so on. 
+# Otherwise, it considers them to be options
 elif [ $1 == "-h" ] || [ $1 == "--help" ]
 then
 	printf "Usage: fzf-bookmarks [options] [argument1] [argument2]\n\n"
