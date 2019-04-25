@@ -62,11 +62,13 @@ open_file(){
 	then
 		# Retrieve the value of $EDITOR to see if it is a terminal based one
 		program=$(eval echo $program)
+
+		# Check for some common terminal editors
 		if [ $program = "vim" ] || [ $program = "vi" ] || [ $program = "nano" ] || [ $program = "ed" ] || [ $program = "emacs -nw" ] || [ $program = "emacsclient -nw" ]
 		then
 			eval "$program" $fileLocation
 		else
-			# start editor in background to not block terminal
+			# start program/editor in background to not block terminal 
 			eval "$program" $fileLocation &
 		fi
 			
@@ -202,11 +204,12 @@ function selectManPage(){
 		exec man $selectedPage
 	fi
 }
+
 # Remove the specified bookmark from the bookmarks file
 function removeBookmark(){
 	if [ ! -z "$2" ]
 	then
-		printf "Too many arguments. Either provide the name of a bookmark or do not provide anything to delete through fzf\n"
+		printf "Too many arguments. Either provide the name of a bookmark or do not provide any arguments to select the bookmark through fzf\n"
 	# case of no arg provided, use fzf to select
 	elif [ -z "$1" ]
 	then
@@ -217,20 +220,18 @@ function removeBookmark(){
 			if [ ! -z $selectedBookmark ]
 			then
 				# remove the selected bookmark
-				# using sed instead of awk since we do not 
-				# have to copy the entire file over
-				sed -i "/^$selectedBookmark/d" $bookmarkPath
+				sed -i "/^${selectedBookmark}\s.*/d" "$bookmarkPath"
 			fi
-			exit 0
+
 	# case of providing a name manually
 	else 
 		local selectedBookmarkIndex=$(awk -v var="$1" '$1 == var {print NR}' $bookmarkPath)
 		if [ ! -z $selectedBookmarkIndex ]
 		then
-				# delete the line number 
-				sed -i "$selectedBookmarkIndex"d "$bookmarkPath"
+				# Delete the bookmark
+				sed -i "${selectedBookmarkIndex}d" "$bookmarkPath"
 		else
-				printf "Bookmark not found!\n"
+				printf "Bookmark not found! It most likely does not exist\n"
 		fi
 	fi
 }
@@ -254,22 +255,26 @@ then
 
 elif [ $1 == "-a" ]
 then
+	# Add a new bookmark
 	addBookmark "$2" "$3"
 
 elif [ $1 == "-r" ]
 then
-
+	# Remove a bookmark
 	removeBookmark "$2" "$3"	
+
 elif [ $1 == "-eraseall" ]
 then
-
+	# Erase all bookmarks and create a new blank file
 	eraseAllBookmarks
+
 elif [ $1 == "-al" ]
 then
-
+	# Select an alias and execute it
 	selectAlias	
+
 elif [ $1 == "-m" ]
 then
-
+	# Fuzzy search through man pages(Not working fully)
 	selectManPage $2
 fi
