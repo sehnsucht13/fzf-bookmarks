@@ -184,7 +184,13 @@ function eraseAllBookmarks(){
 
 # Display all aliases to the user and let them select one
 function selectAlias(){
-	local selectedAlias=$(awk '/^alias / {print $0}' "$HOME/.bashrc" | fzf)
+	local selectedAlias=$(awk '/^alias (.*)=/ {print $0}' "$HOME/.bashrc" | fzf)
+
+	# Split the string by using = as a delimiter
+	# Remove the quotes surrounding it
+	# print and set new variable
+	selectedAlias=$(echo "$selectedAlias" | awk '{split($0, a, "="); gsub("\047", "", a[2]); print a[2]}')
+	eval "$selectedAlias"
 }
 
 function selectManPage(){
