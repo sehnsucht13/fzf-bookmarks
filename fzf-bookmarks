@@ -245,38 +245,59 @@ then
 	# Display all bookmarks
 	switchToBookmark 0
 
-elif [ $1 == "-d" ]
+elif [ $1 == "-d" ] || [ $1 == "--dir" ]
 then
 	# Display directories only
 	switchToBookmark 1
 
-elif [ $1 == "-f" ]
+elif [ $1 == "-f" ] || [ $1 == "--file" ]
 then
 	# Display Files only
 	switchToBookmark 2
 
-elif [ $1 == "-a" ]
+elif [ $1 == "-a" ] || [ $1 == "--add" ]
 then
 	# Add a new bookmark
 	addBookmark "$2" "$3"
 
-elif [ $1 == "-r" ]
+elif [ $1 == "-r" ] || [ $1 == "--remove" ]
 then
 	# Remove a bookmark
 	removeBookmark "$2" "$3"	
 
-elif [ $1 == "-eraseall" ]
+elif [ $1 == "--eraseall" ]
 then
 	# Erase all bookmarks and create a new blank file
 	eraseAllBookmarks
 
-elif [ $1 == "-al" ]
+elif [ $1 == "-al" ] || [ $1 == "--alias" ]
 then
 	# Select an alias and execute it
 	selectAlias	
 
-elif [ $1 == "-m" ]
+elif [ $1 == "-m" ] || [ $1 == "--man" ]
 then
 	# Fuzzy search through man pages(Not working fully)
 	selectManPage $2
+	
+elif [ $1 == "--usage" ] 
+then
+	printf "fzf-bookmarks is a small bookmark manager for the commandline with the ability to bookmark\n"
+	printf "both directories and files. Additionally, when a bookmark is selected, it will be open either\n"
+	printf "with a dedicated program selected from the config file located in ~/.config/fzf-bookmarks/config\n"
+	printf "or in the case of a folder, navigate to it in the current terminal instance.\n"
+
+elif [ $1 == "-h" ] || [ $1 == "--help" ]
+then
+	printf "Usage: fzf-bookmarks [options] [argument1] [argument2]\n\n"
+	printf "Options:\n"
+	printf -- "-d, --dir	Select a bookmarked directory\n"
+	printf -- "-f, --file	Select a bookmarked file\n"
+	printf -- "-a, --add	Add a file or directory to bookmarks\n"
+	printf -- "-r, --remove	Delete a bookmark\n"
+	printf -- "--eraseall	Erase the entire bookmark file and replace it with a new one\n"
+	printf -- "-al, --alias	Select an alias from your .bashrc file\n"
+	printf -- "-m, --man	Select a manpage to open\n"
+	printf -- "--usage		Show a short usage message\n"
+	printf -- "-h, --help	Display help menu and options\n"
 fi
