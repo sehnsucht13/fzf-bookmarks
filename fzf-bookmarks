@@ -34,7 +34,7 @@ fi
 
 # check if the bookmark file exists
 # if it does not, it will be created in the .config folder
-function checkBookmarkDirectory(){
+function checkBookmarkDirectory {
 	if [ ! -d "$HOME/.config/fzf-bookmarks" ]
 	then
 			cd "$HOME/.config"
@@ -47,15 +47,17 @@ function checkBookmarkDirectory(){
 }
 
 # Open a file with the selected program in the config file or $EDITOR otherwise
-open_file(){
+function open_file {
 	# Check if the bookmark is not empty. If it is, do nothing
 	if [ ! -z $selectedBookmark ]
 	then
 		# Retrieve the file type
-		local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $4}' $bookmarkPath)
-		local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {print $3}' $bookmarkPath)
+		local fileType=$(awk -v var=$selectedBookmark '$1 == var {print $NF}' $bookmarkPath)
+		local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {$1=$2=$NF=""; print $0}' $bookmarkPath | awk '{$1=$1; print}')
 		# Retrieve the corresponding program used to launch
 		local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
+		echo $fileType
+		echo $fileLocation
 		# Launch the program in a detached state
 		# Currently does not work if $EDITOR is a terminal one
 		if [ ! -z $program ]
@@ -68,10 +70,11 @@ open_file(){
 			[ $program = "nano" ] || [ $program = "ed" ] || \
 			[ $program = "emacs -nw" ] || [ $program = "emacsclient -nw" ]
 			then
-				eval "$program" $fileLocation
+				echo "$fileLocation"
+				eval "$program" "$fileLocation"
 			else
 				# start program/editor in background to not block terminal 
-				eval "$program" $fileLocation &
+				eval "$program" "$fileLocation" &
 			fi
 				
 		# Deal with the case of a filetype not existing
@@ -83,10 +86,11 @@ open_file(){
 }
 
 # Open a directory
-open_dir(){
+function open_dir {
 	if [ ! -z $selectedBookmark ]
 	then 
-		cd $(awk -v var="$selectedBookmark" '$1 == var {print $3}' $bookmarkPath)
+		local folder=$(awk -v var="$selectedBookmark" '$1 == var {$1=$2="";print $0}' $bookmarkPath | awk '{$1=$1; print}')
+		cd "$folder"
 	fi
 }
 
@@ -96,7 +100,7 @@ open_dir(){
 # 0: Show all bookmarks(unfiltered)
 # 1: Show only directory bookmarks
 # 2: Show only files
-function switchToBookmark(){
+function switchToBookmark {
 	# Check if there are any bookmarks.
 	local bmarkLineNum=$(wc -l $bookmarkPath | awk '{print $1}')
 	if [ $bmarkLineNum == 0 ]
@@ -134,7 +138,7 @@ function switchToBookmark(){
 
 # Add a new bookmark
 # If a path is not provided then the current directory is used
-function addBookmark(){
+function addBookmark {
 	# check if a bookmark with the name provided already exists
 	local boolUnique=$(awk -v var="$1" '$1 == var {print 1}' $bookmarkPath)
 	if [ ! -z "$boolUnique" ]
@@ -148,18 +152,19 @@ function addBookmark(){
 		printf "$1\tDIR\t$PWD\n" >> $bookmarkPath
 		printf "Bookmark added successfully!\n"
 	# Case of a path being provided 
-	elif [ -d $2 ]
+	elif [[ -d "$2" ]]
 	then
 		if [[ $2 = /* ]]
 		then
 			printf "$1\tDIR\t$2\n"  >> $bookmarkPath
 		else
-			printf "$1\tDIR\t%s\n" $(echo "$PWD""/"$2) >> $bookmarkPath
+			printf "$1\tDIR\t$PWD/$2\n"  >> $bookmarkPath
+
 		fi
 	# Case of adding a file
-	elif [ -e $2 ]
+	elif [[ -f $2 ]]
 	then
-		# retrieve the file extension
+		# retrieve the file extension for the file
 		# Source: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
 		local extension=$( echo "$*" | awk -F . '{print $NF}')
 
@@ -169,7 +174,7 @@ function addBookmark(){
 		then
 			printf "$1\tFILE\t$2\t$extension\n"  >> $bookmarkPath
 		else
-			printf "$1\tFILE\t%s\t$extension\n" $(echo "$PWD""/"$2) >> $bookmarkPath
+			printf "$1\tFILE\t$PWD/$2\t$extension\n"  >> $bookmarkPath
 		fi
 
 	# Incomplete bookmark.
@@ -179,13 +184,13 @@ function addBookmark(){
 }
 
 # Erase the entire bookmark file and create a fresh one
-function eraseAllBookmarks(){
+function eraseAllBookmarks {
 	rm $bookmarkPath
 	touch $bookmarkPath
 }
 
 # Display all aliases to the user and let them select one
-function selectAlias(){
+function selectAlias {
 	local selectedAlias=$(awk '/^alias (.*)=/ {print $0}' "$HOME/.bashrc" | fzf)
 
 	# Split the string by using = as a delimiter
@@ -195,7 +200,7 @@ function selectAlias(){
 	eval "$selectedAlias"
 }
 
-function selectManPage(){
+function selectManPage {
 	# hold the name of selected page 
 	local selectedPage=""
 
@@ -204,17 +209,15 @@ function selectManPage(){
 	then
 		# variable to hold the selected manpage
 		selectedPage=$(man -k . | awk '{print $1 $2}' | fzf)
-		exec man $selectedPage
-
-	# Exec manpages for selected section
+		eval man "$selectedPage"
 	else
-		selectedPage=$(apropos -s "$1" . | awk '{print $1}'| fzf)
-		exec man $selectedPage
+		printf "This command does not accept any arguments\n"
 	fi
+
 }
 
 # Remove the specified bookmark from the bookmarks file
-function removeBookmark(){
+function removeBookmark {
 	if [ ! -z "$2" ]
 	then
 		printf "Too many arguments. Either provide the name of a bookmark or do not provide any arguments to select the bookmark through fzf\n"
