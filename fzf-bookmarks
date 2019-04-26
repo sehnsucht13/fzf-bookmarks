@@ -42,6 +42,7 @@ function checkBookmarkDirectory(){
 			cd "fzf-bookmarks"
 			touch "bookmarks"
 			touch "config"
+			echo "DEFAULT $EDITOR" >> config
 	fi
 }
 
