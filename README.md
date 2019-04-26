@@ -12,7 +12,7 @@ The only things required are:
 This script needs to run in the same shell that it is invoked in. Therefore, it must be ran with the command `source` prepended to it. A helpful alias to do this would be `alias fzf-bookmarks='source ~/path/to/fzf-bookmarks'` which must be added to your `.bashrc`. If `fzf-bookmarks` is invoked without any flags provided, all bookmarks are shown without any filtering.  
 
 fzf-bookmarks currently supports the following options/flags:  
-- `-a` or `--add`: Add a directory to the bookmarks. This option requires the user to specify the name of the bookmark and optionally, a path. If no path is provided then the current folder is added to the bookmark list. NOTE: The bookmark name must be unique!  
+- `-a` or `--add`: Add a directory to the bookmarks. This option requires the user to specify the name of the bookmark and optionally, a path. If no path is provided then the current folder is added to the bookmark list. NOTE: The bookmark name must be unique and it must not contain any spaces. On the other hand, the path provided can contain spaces.
 - `-f` or `--file`: List all bookmarked only. When a file is selected, the config file located in `~/.config/fzf-bookmarks` is checked for the corresponding filetype. If none is found, the default is used which attempts to open the file with `$EDITOR`.
 - `-d` or `--dir`: List all directories bookmarked.
 - `-r` or `--remove`: Erase a bookmark from the list. This option requires the user to specify the name of the bookmark. This can either be specified explicitly as an argument or if the flag is used without any arguments provided, fzf can be used. NOTE: It currently does not support the removal of more than one bookmark at a time but will in the future.

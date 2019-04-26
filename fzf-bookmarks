@@ -224,14 +224,16 @@ function removeBookmark {
 	# case of no arg provided, use fzf to select
 	elif [ -z "$1" ]
 	then
-			selectedBookmark=$(awk '{print $1}' $bookmarkPath | fzf)
+			selectedBookmark=$(awk '{print $1}' $bookmarkPath | fzf -m)
 			# Handle the case of the user pressing CTRL+C
 			# if we do not check that $selectedBookmark is not empty
 			# then the entire list of bookmarks is deleted
-			if [ ! -z $selectedBookmark ]
+			if [ ! -z "$selectedBookmark" ]
 			then
-				# remove the selected bookmark
-				sed -i "/^${selectedBookmark}\s.*/d" "$bookmarkPath"
+				echo "$selectedBookmark" | while read eachLine
+				do
+					sed -i "/^${eachLine}/d" "$bookmarkPath"
+				done
 			fi
 
 	# case of providing a name manually
@@ -247,21 +249,22 @@ function removeBookmark {
 	fi
 }
 
+# Check if the bookmark exists
 checkBookmarkDirectory
 # Parse script arguments
 if [ -z $1 ]
 then 
-	# Display all bookmarks
+	# Display all bookmarks without filters
 	switchToBookmark 0
 
 elif [ $1 == "-d" ] || [ $1 == "--dir" ]
 then
-	# Display directories only
+	# Display directory bookmarks only
 	switchToBookmark 1
 
 elif [ $1 == "-f" ] || [ $1 == "--file" ]
 then
-	# Display Files only
+	# Display file bookmarks only
 	switchToBookmark 2
 
 elif [ $1 == "-a" ] || [ $1 == "--add" ]
