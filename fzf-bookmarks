@@ -256,6 +256,17 @@ function removeBookmark {
 	fi
 }
 
+function connectToWifiList {
+	# Retrieve the name of the network
+	local networkName=$(nmcli d wifi list | awk '!/--/ && !/SSID/' | fzf | awk '{print $1}')
+	# Hold the password in a local variable
+	local pswd=""
+	# Read it
+	read -s -p "Wifi Password: " pswd
+	# Connect to wifi
+	nmcli d wifi connect "$networkName" password "$pswd"
+}
+
 # Check if the bookmark exists
 checkBookmarkDirectory
 # Parse script arguments
@@ -299,6 +310,9 @@ then
 	# Fuzzy search through man pages(Not working fully)
 	selectManPage $2
 	
+elif [ $1 == "-w" ] || [ $1 == "--wifi" ]
+then
+	connectToWifiList
 # Print usage
 elif [ $1 == "--usage" ] 
 then

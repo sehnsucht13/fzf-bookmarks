@@ -16,6 +16,7 @@ fzf-bookmarks currently supports the following options/flags:
 - `-f` or `--file`: List all bookmarked only. When a file is selected, the config file located in `~/.config/fzf-bookmarks` is checked for the corresponding filetype. If none is found, the default is used which attempts to open the file with `$EDITOR`.
 - `-d` or `--dir`: List all directories bookmarked.
 - `-r` or `--remove`: Erase a bookmark from the list. This option requires the user to specify the name of the bookmark. This can either be specified explicitly as an argument or if the flag is used without any arguments provided, fzf can be used. NOTE: It currently does not support the removal of more than one bookmark at a time but will in the future.
+- `-w` or `--wifi`: Use `networkmanager` to list all nearby wifi connections and select one to connect to it.
 - `-eraseall`: Removes the bookmarks file and replaces it with a new one.
 - `-al` or `--alias`: List all aliases and select one to be executed. Handy if you want to remind yourself of an alias quickly and execute it at the same time. All aliases are retrieved from the `.bashrc` file. A valid alias is considered to be one of the form `alias myAliasName='someBashCommandHere'`.
 - `-m` or `--man`: List all manpages. This feature is currently experimental and might not work as expected.
