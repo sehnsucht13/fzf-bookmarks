@@ -15,7 +15,7 @@ fzf-bookmarks currently supports the following options/flags:
 - `-a` or `--add`: Add a directory to the bookmarks. This option requires the user to specify the name of the bookmark and optionally, a path. If no path is provided then the current folder is added to the bookmark list. NOTE: The bookmark name must be unique and it must not contain any spaces but the file path itself can have them.
 - `-f` or `--file`: List all bookmarked only. When a file is selected, the config file located in `~/.config/fzf-bookmarks` is checked for the corresponding filetype. If none is found, the default is used which attempts to open the file with `$EDITOR`.
 - `-d` or `--dir`: List all directories bookmarked.
-- `-r` or `--remove`: Erase a bookmark from the list. This option requires the user to specify the name of the bookmark. This can either be specified explicitly as an argument or if the flag is used without any arguments provided, fzf can be used. NOTE: It currently does not support the removal of more than one bookmark at a time but will in the future.
+- `-r` or `--remove`: Erase a bookmark from the list. This option requires the user to specify the name of the bookmark. This can either be specified explicitly as an argument or if the flag is used without any arguments provided, fzf can be used. 
 - `-w` or `--wifi`: Use `networkmanager` to list all nearby wifi connections and select one to connect to it.
 - `-eraseall`: Removes the bookmarks file and replaces it with a new one.
 - `-al` or `--alias`: List all aliases and select one to be executed. Handy if you want to remind yourself of an alias quickly and execute it at the same time. All aliases are retrieved from the `.bashrc` file. A valid alias is considered to be one of the form `alias myAliasName='someBashCommandHere'`.
@@ -25,6 +25,7 @@ fzf-bookmarks currently supports the following options/flags:
 
 # Config file
 The config file for this program is automatically created upon its first startup. It is located in `~/.config/fzf-bookmarks` along with the bookmarks file called `bookmarks`.  
+
 Initially, the file will contain only one filetype called `DEFAULT` which is set to `$EDITOR`. The only things which need to be added are the filetype and the corresponding program. If `$EDITOR` is a terminal one(vim, nano...), then it will be called in the current terminal/bash instance. If it is not then it will be run in the background with the `&` flag appended at the end of the command.  
 
 Another thing to note is that the filetype of the program is determined by looking at the file name starting from its last character until the first `.` is encountered. As an example `myfile.png` will have a filetype of `png`. On the other hand, if we create a file like `myfile.txt.pdf` then its file type will be `pdf`. If the filetype does not contain a `.` as in it is simply called something like `myfile`, then it will be assigned the filetype of `DEFAULT`.  
