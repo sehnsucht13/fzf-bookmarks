@@ -56,8 +56,6 @@ function open_file {
 		local fileLocation=$(awk -v var=$selectedBookmark '$1 == var {$1=$2=$NF=""; print $0}' $bookmarkPath | awk '{$1=$1; print}')
 		# Retrieve the corresponding program used to launch
 		local program=$(awk -v var=$fileType '$1 == var {print $2}' $fileLauncherPath)
-		echo $fileType
-		echo $fileLocation
 		# Launch the program in a detached state
 		# Currently does not work if $EDITOR is a terminal one
 		if [ ! -z $program ]
@@ -70,17 +68,20 @@ function open_file {
 			[ $program = "nano" ] || [ $program = "ed" ] || \
 			[ $program = "emacs -nw" ] || [ $program = "emacsclient -nw" ]
 			then
-				echo "$fileLocation"
-				eval "$program" "$fileLocation"
+				# Use bash built in for replacement. This seems to be one of the only
+				# ways which I could find to feed a variable name with spaces to eval
+				# in bash
+				eval "$program ${fileLocation// /\\ }"
 			else
 				# start program/editor in background to not block terminal 
-				eval "$program" "$fileLocation" &
+				eval "$program" "${fileLocation// /\\ }" "&"
 			fi
 				
 		# Deal with the case of a filetype not existing
 		else
 			program=$(awk -v var="DEFAULT" '$1 == var {print $2}' $fileLauncherPath)
-			eval "$program" $fileLocation
+			# Again use bash builtin, see note above the first eval
+			eval "$program" "${fileLocation// /\\ }" 
 		fi
 	fi
 }
@@ -144,7 +145,6 @@ function addBookmark {
 	if [ ! -z "$boolUnique" ]
 	then
 		printf "A bookmark with that name already exists! Please enter a different one.\n"
-	
 
 	# If the second argument passed is empty
 	elif [ -z "$2" ] 
@@ -164,9 +164,16 @@ function addBookmark {
 	# Case of adding a file
 	elif [[ -f $2 ]]
 	then
-		# retrieve the file extension for the file
-		# Source: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
-		local extension=$( echo "$*" | awk -F . '{print $NF}')
+		# Check if the file we are adding contains a dot to separate file type
+		if [[ "${2}" =~ .*\..* ]]
+		then
+			# retrieve the file extension for the file
+			# Source: https://liquidat.wordpress.com/2007/09/29/short-tip-get-file-extension-in-shell-script/
+			local extension=$( echo "$*" | awk -F . '{print $NF}')
+		else
+			# If it does not, we give it the default extension
+			local extension="DEFAULT"
+		fi
 
 		# Check if the full filepath is provided. If not, we have to prepend the full path to be able to access
 		# the bookmark from anywhere
