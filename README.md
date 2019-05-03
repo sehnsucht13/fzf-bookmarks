@@ -7,6 +7,8 @@ The only things required are:
 - [fzf](https://github.com/junegunn/fzf)
 - awk
 - sed
+## Optional Dependencies
+- networkmanager/nmcli: This is optional and only needed if fzf-bookmarks is used with the `-w, --wifi` flag to select and connect to a new wifi network
 
 # Usage
 This script needs to run in the same shell that it is invoked in. Therefore, it must be ran with the command `source` prepended to it. A helpful alias to do this would be `alias fzf-bookmarks='source ~/path/to/fzf-bookmarks'` which must be added to your `.bashrc`. If `fzf-bookmarks` is invoked without any flags provided, all bookmarks are shown without any filtering.  
@@ -19,7 +21,7 @@ fzf-bookmarks currently supports the following options/flags:
 - `-w` or `--wifi`: Use `networkmanager` to list all nearby wifi connections and select one to connect to it.
 - `-eraseall`: Removes the bookmarks file and replaces it with a new one.
 - `-al` or `--alias`: List all aliases and select one to be executed. Handy if you want to remind yourself of an alias quickly and execute it at the same time. All aliases are retrieved from the `.bashrc` file. A valid alias is considered to be one of the form `alias myAliasName='someBashCommandHere'`.
-- `-m` or `--man`: List all manpages. This feature is currently experimental and might not work as expected.
+- `-m` or `--man`: List all manpages and visit the selected one. 
 - `-h` or `--help`: List all available options.
 - `--usage`: List a small preamble regarding the usage of this program.
 
@@ -42,3 +44,9 @@ jpg     vimiv
 txt     $EDITOR
 DEFAULT $EDITOR
 ```
+
+# Possible Issues
+There are three possible issues which have so far been detected:
+1. If the user bookmarks a directory/file which has a `&` in its name then the bookmark will not be opened correctly since bash will interpret anything after the `&` as being another command.
+2. The manpage feature requires `mandb` to have been created. This should not be a problem but if there is no output, call `mandb -c` to create  the database.
+3. When using `fzf-bookmarks` to select a new wifi network, there might be a delay before output is shown in fzf. This is not due to this script but instead due to `networkmanager/nmcli` scanning the network. The delay cannot be reduced in any way.
