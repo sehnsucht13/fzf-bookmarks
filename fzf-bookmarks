@@ -209,14 +209,23 @@ function selectAlias {
 
 function selectManPage {
 	# hold the name of selected page 
-	local selectedPage=""
+	local selectedPageName=""
+	# Hold the section of the page since some have several available
+	local selectedPageSection=""
 
 	# Print all manpage sections
 	if [ -z $1 ]
 	then
 		# variable to hold the selected manpage
-		selectedPage=$(man -k . | awk '{print $1 $2}' | fzf)
-		eval man "$selectedPage"
+		selectedPageName=$(man -k . | awk '{print $1, $2}' | fzf)
+		if [ ! -z "$selectedPageName" ]
+		then 
+			selectedPageSection=$(echo $selectedPageName | awk '{print $2}')
+			selectedPageSection=$(echo "$selectedPageSection" | sed 's/[)(]//g')
+			selectedPageName=$(echo "$selectedPageName" | awk '{print $1}')
+			eval man "$selectedPageSection" "$selectedPageName"
+		fi
+			
 	else
 		printf "This command does not accept any arguments\n"
 	fi
@@ -258,13 +267,30 @@ function removeBookmark {
 
 function connectToWifiList {
 	# Retrieve the name of the network
-	local networkName=$(nmcli d wifi list | awk '!/--/ && !/SSID/' | fzf | awk '{print $1}')
-	# Hold the password in a local variable
-	local pswd=""
-	# Read it
-	read -s -p "Wifi Password: " pswd
-	# Connect to wifi
-	nmcli d wifi connect "$networkName" password "$pswd"
+	# Before piping it into fzf, remove all lines with -- and the column names
+	local networkName=$(nmcli d wifi list | awk '!/--/ && !/SSID/' | fzf)
+	if [ ! -z "$networkName" ]
+	then
+		# Since nmcli uses a * to designate the network to which we are 
+		# current connected to, we have to check if it is present
+		if [[ $(echo "$networkName" | awk '{print $1}') == "*" ]]
+		then
+			networkName=$(echo "$networkName" | awk '{print $2}')
+		else
+			networkName=$(echo "$networkName" | awk '{print $1}')
+		fi
+
+		# Hold the password in a local variable
+		# TODO There should be a more secure way of doing this instead of
+		# storing the password in a local var
+		local pswd=""
+		# Read the password
+		read -s -p "Wifi Password: " pswd
+		# Connect to wifi
+		nmcli d wifi connect "$networkName" password "$pswd"
+	else
+		printf "No name was selected. Not connecting to any network\n"
+	fi
 }
 
 # Check if the bookmark exists
@@ -309,11 +335,13 @@ elif [ $1 == "-m" ] || [ $1 == "--man" ]
 then
 	# Fuzzy search through man pages(Not working fully)
 	selectManPage $2
-	
+
 elif [ $1 == "-w" ] || [ $1 == "--wifi" ]
 then
+	# Connect to wifi	
 	connectToWifiList
-# Print usage
+
+# Print usage information
 elif [ $1 == "--usage" ] 
 then
 	printf "fzf-bookmarks is a small bookmark manager for the commandline with the ability to bookmark\n"
@@ -334,6 +362,7 @@ then
 	printf -- "--eraseall	Erase the entire bookmark file and replace it with a new one\n"
 	printf -- "-al, --alias	Select an alias from your .bashrc file\n"
 	printf -- "-m, --man	Select a manpage to open\n"
+	printf -- "-w, --wifi	Connect to an available wifi network"
 	printf -- "--usage		Show a short usage message\n"
 	printf -- "-h, --help	Display help menu and options\n"
 fi
