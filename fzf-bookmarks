@@ -107,33 +107,47 @@ function switchToBookmark {
 	if [ $bmarkLineNum == 0 ]
 	then
 		printf "You do not have any bookmarks set\n"
-		printf "You can add some by calling \"fzf-bookmarks -a NAME PATH\"\n"
+		printf "You can add some by using one of the following:\n"
+		printf "\"fzf-bookmarks -a NAME PATH\" to save the specified PATH under the name NAME\n"
+		printf "\"fzf-bookmarks -a NAME\" to save current folder under the name NAME\n"
 
 	# Show all bookmarks without filtering
 	elif [ $1 -eq 0 ]
 	then
 			selectedBookmark=$(awk '{print $1, $2}' $bookmarkPath | fzf)
-			# Grab the type of selected bookmark(either DIR or FILE)
-			local type=$(echo $selectedBookmark | awk '{print $2}')
-			selectedBookmark=$(echo $selectedBookmark | awk '{print $1}') 
-			if [ $type == "DIR" ]
+			# Check if empty
+			if [ ! -z "$selectedBookmark" ]
 			then
-				open_dir
-			elif [ $type == "FILE" ]
-			then
-				open_file
+				# Grab the type of selected bookmark(either DIR or FILE)
+				local type=$(echo $selectedBookmark | awk '{print $2}')
+				selectedBookmark=$(echo $selectedBookmark | awk '{print $1}') 
+				if [ $type == "DIR" ]
+				then
+					open_dir
+				elif [ $type == "FILE" ]
+				then
+					open_file
+				fi
 			fi
 
 	# Case of selecting only directories
 	elif [ $1 -eq 1 ]
 	then
 		selectedBookmark=$(awk ' $2 == "DIR" {print $1}' $bookmarkPath | fzf)
-		open_dir
+		# Check if empty
+		if [ ! -z "$selectedBookmark" ]
+		then
+			open_dir
+		fi
 
 	# Case of selecting only files
 	else [ $1 -eq 2 ]
 		selectedBookmark=$(awk ' $2 == "FILE" {print $1}' $bookmarkPath | fzf)
-		open_file
+		# Check if empty
+		if [ ! -z "$selectedBookmark" ]
+		then
+			open_file
+		fi
 	fi
 }
 
@@ -149,8 +163,14 @@ function addBookmark {
 	# If the second argument passed is empty
 	elif [ -z "$2" ] 
 	then
-		printf "$1\tDIR\t$PWD\n" >> $bookmarkPath
-		printf "Bookmark added successfully!\n"
+		if [ -z "$1" ]
+		then
+			printf "Please provide a name for the bookmark\n"
+
+		else
+			printf "$1\tDIR\t$PWD\n" >> $bookmarkPath
+			printf "Bookmark added successfully!\n"
+		fi
 	# Case of a path being provided 
 	elif [[ -d "$2" ]]
 	then
