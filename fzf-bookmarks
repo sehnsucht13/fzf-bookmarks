@@ -74,7 +74,7 @@ function open_file {
 				eval "$program ${fileLocation// /\\ }"
 			else
 				# start program/editor in background to not block terminal 
-				eval "$program" "${fileLocation// /\\ }" "&"
+				eval "$program" "${fileLocation// /\\ }" "&" "disown"
 			fi
 				
 		# Deal with the case of a filetype not existing
